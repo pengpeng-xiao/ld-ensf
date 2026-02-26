@@ -10,14 +10,14 @@ from pathlib import Path
 
 from src import utils
 from src.data_preprocess import DataPreprocessor, select_space_subset
-from src.fourier_ldnet import ResFourierLDNN
+from src.model import ResFourierLDNN
 from src.normalization import Normalize, Normalize_gaussian
 
 def create_training_options():
     parser = argparse.ArgumentParser()
     
     # --------------- path and logging ---------------
-    parser.add_argument("--base-path",          type=Path,  default="/work/pengpeng/data-assimilation/kolmogorov_flow")
+    parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
     parser.add_argument("--data-path",          type=Path,  default="data/data_cplx_Re_500_1500_150x150.npz")
     parser.add_argument("--log-dir",            type=Path,  default="log")
     parser.add_argument("--name",               type=str,   default="run_data_assimilation",    help="name of the run")
@@ -84,7 +84,7 @@ def load_data(opt):
     data_test = prep_data.get_test_data()
     
     from src.normalization import Normalize_gaussian
-    stat = np.load("/work/pengpeng/data-assimilation/kolmogorov_flow/saved_model/cplx_Re500_1500_150x150/mean_std.npz", allow_pickle=True)
+    stat = np.load(opt.base_path / "saved_model/cplx_Re500_1500_150x150/mean_std.npz", allow_pickle=True)
     mean = stat["mean"]
     std = stat["std"]
     normalize_y = Normalize_gaussian(mean, std)
@@ -136,7 +136,7 @@ def main(opt):
     model.to(opt.device)
     # model = load_model(model, opt.base_path / opt.model_path / "dyn_1999.ckpt",
     #                    opt.base_path / opt.model_path / "rec_1999.ckpt", opt.device)
-    torch.load("/work/pengpeng/data-assimilation/kolmogorov_flow/saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14/ckpt_1999.pt", map_location=opt.device)
+    torch.load(opt.base_path / "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14/ckpt_1999.pt", map_location=opt.device)
     
     
     for data in [data_train, data_valid, data_test]:

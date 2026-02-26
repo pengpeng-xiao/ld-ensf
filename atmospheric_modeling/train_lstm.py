@@ -6,8 +6,6 @@ import wandb
 import shutil
 from pathlib import Path
 
-import sys
-sys.path.append("/work/pengpeng/data-assimilation")
 from src.encoder import *
 # set seed
 torch.manual_seed(0)
@@ -82,8 +80,9 @@ if __name__ == "__main__":
     num_layers = 1
     dropout = 0
     epsilon = 1
-    data_path = "/work/pengpeng/data-assimilation/planetswe/saved_model/parameter_shuf_t21d/observation_random_32.pth"
-    save_path = "/work/pengpeng/data-assimilation/planetswe/saved_model/parameter_shuf_t21d"
+    # TODO: Update these paths to match your environment
+    data_path = "saved_model/parameter_shuf_t21d/observation_random_32.pth"
+    save_path = "saved_model/parameter_shuf_t21d"
     config={
         "device": str(device),
         "epochs": epochs,

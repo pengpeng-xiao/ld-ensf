@@ -13,20 +13,18 @@ import glob
 from tqdm import tqdm
 import re
 
-import sys
-sys.path.append("/work/pengpeng/data-assimilation/")
 from src import utils
 from src.logger import Logger
 from src.data_preprocess import DataPreprocessor, select_space_subset
-from src.fourier_ldnet import ResFourierLDNN
-from src.train import Trainer  
+from src.model import ResFourierLDNN
+from src.train import Trainer
 from src.normalization import Normalize, Normalize_gaussian
 
 def create_training_options():
     parser = argparse.ArgumentParser()
     
     # --------------- path and logging ---------------
-    parser.add_argument("--base-path",          type=Path,  default="/work/pengpeng/data-assimilation/planetswe")
+    parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
     parser.add_argument("--data-path",          type=Path,  default="data_parameter_shuf")
     parser.add_argument("--log-dir",            type=Path,  default="log")
     parser.add_argument("--name",               type=str,   default="parameter_shuf_t21d",    help="name of the run")

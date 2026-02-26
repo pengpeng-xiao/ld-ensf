@@ -6,6 +6,7 @@ import wandb
 import deepxde as dde
 import h5py
 
+import sys
 import argparse
 from pathlib import Path
 import shutil
@@ -13,20 +14,18 @@ import glob
 from tqdm import tqdm
 import re
 
-import sys
-sys.path.append("/work/pengpeng/data-assimilation/")
 from src import utils
 from src.logger import Logger
 from src.data_preprocess import DataPreprocessor, select_space_subset
-from src.model import  LDNN 
-from src.train import Trainer  
+from src.model import LDNN
+from src.train import Trainer
 from src.normalization import Normalize, Normalize_gaussian
 
 def create_training_options():
     parser = argparse.ArgumentParser()
     
     # --------------- path and logging ---------------
-    parser.add_argument("--base-path",          type=Path,  default="/work/pengpeng/data-assimilation/planetswe/")
+    parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
     parser.add_argument("--data-path",          type=Path,  default="data_parameter_shuf")
     parser.add_argument("--log-dir",            type=Path,  default="log")
     parser.add_argument("--wandb-entity",       type=str,   default="20307110428",    help="user name of your W&B account")

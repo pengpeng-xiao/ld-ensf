@@ -7,18 +7,17 @@ import wandb
 import argparse
 from pathlib import Path
 import matplotlib.pyplot as plt
-import sys
-# sys.path.insert(0, "/work/pengpeng/data-assimilation/")
+
 from src import utils
 from src.data_preprocess import DataPreprocessor, select_space_subset
-from src.resnet import ResLDNN
+from src.model import ResLDNN
 from src.normalization import Normalize
 
 def create_training_options():
     parser = argparse.ArgumentParser()
     
     # --------------- path and logging ---------------
-    parser.add_argument("--base-path",          type=Path,  default="/work/pengpeng/data-assimilation/shallow_water")
+    parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
     parser.add_argument("--data-path",          type=Path,  default="data/data_2000_150x150_coriolis_recd_10_w_300_lr_1e-3_bs_2_ic_nor_u.pth")
     parser.add_argument("--model-path",         type=Path,  default="saved_model/coriolis_recd_10_w_300_lr_1e-3_bs_2_ic_nor_u")
     
