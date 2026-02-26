@@ -10,19 +10,18 @@ import shutil
 import argparse
 from pathlib import Path
 
-sys.path.insert(0, "/work/pengpeng/data-assimilation/")
 from src import utils
 from src.logger import Logger
 from src.normalization import Normalize, Normalize_gaussian
 from src.data_preprocess import DataPreprocessor, select_space_subset
-from src.fourier_ldnet import ResFourierLDNN
+from src.model import ResFourierLDNN
 from src.train import Trainer  
 
 def create_training_options():
     parser = argparse.ArgumentParser()
     
     # --------------- path and logging ---------------
-    parser.add_argument("--base-path",          type=Path,  default="/work/pengpeng/data-assimilation/kolmogorov_flow")
+    parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
     parser.add_argument("--data-path",          type=Path,  default="data/data_cplx_Re_500_1500_150x150.npz")
     parser.add_argument("--log-dir",            type=Path,  default="log")
     parser.add_argument("--wandb-entity",       type=str,   default="20307110428",    help="user name of your W&B account")

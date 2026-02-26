@@ -1,3 +1,4 @@
+import sys
 import torch
 import torch.nn as nn
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -74,8 +75,9 @@ if __name__ == "__main__":
     num_layers = 1
     dropout = 0
     epsilon = 1
-    data_path = "/work/pengpeng/data-assimilation/kolmogorov_flow/data/data_observation_500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14.pth"
-    save_path = "/work/pengpeng/data-assimilation/kolmogorov_flow/saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14"
+    # TODO: Update these paths to match your environment
+    data_path = "data/data_observation_500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14.pth"
+    save_path = "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14"
     config={
         "device": str(device),
         "epochs": epochs,

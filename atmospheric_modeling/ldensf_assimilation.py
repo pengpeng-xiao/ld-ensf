@@ -8,18 +8,16 @@ from tqdm import tqdm
 import argparse
 from pathlib import Path
 import matplotlib.pyplot as plt
-import sys
-sys.path.append("/work/pengpeng/data-assimilation")
 from src import utils
 from src.data_preprocess import DataPreprocessor, select_space_subset
-from src.fourier_ldnet import ResFourierLDNN
+from src.model import ResFourierLDNN
 from src.normalization import Normalize
 
 def create_training_options():
     parser = argparse.ArgumentParser()
     
     # --------------- path and logging ---------------
-    parser.add_argument("--base-path",          type=Path,  default="/work/pengpeng/data-assimilation/planetswe")
+    parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
     parser.add_argument("--data-path",          type=Path,  default="observation_32.pth")
     parser.add_argument("--model-path",         type=Path,  default="saved_model/parameter_shuf_t21d")
     

@@ -10,14 +10,14 @@ from pathlib import Path
 
 from src import utils
 from src.data_preprocess import DataPreprocessor, select_space_subset
-from src.resnet import ResLDNN
+from src.model import ResLDNN
 from src.normalization import Normalize
 
 def create_training_options():
     parser = argparse.ArgumentParser()
     
     # --------------- path and logging ---------------
-    parser.add_argument("--base-path",          type=Path,  default="/work/pengpeng/data-assimilation/shallow_water")
+    parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
     parser.add_argument("--data-path",          type=Path,  default="data/data_2000_150x150_coriolis_ic.npz")
     parser.add_argument("--log-dir",            type=Path,  default="log")
     parser.add_argument("--wandb-entity",         type=str,   default="20307110428",            help="user name of your W&B account")

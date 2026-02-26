@@ -7,16 +7,17 @@ import deepxde as dde
 import argparse
 from pathlib import Path
 import matplotlib.pyplot as plt
+
 from src import utils
 from src.data_preprocess import DataPreprocessor, select_space_subset
-from src.fourier_ldnet import ResFourierLDNN
+from src.model import ResFourierLDNN
 from src.normalization import Normalize
 
 def create_training_options():
     parser = argparse.ArgumentParser()
     
     # --------------- path and logging ---------------
-    parser.add_argument("--base-path",          type=Path,  default="/work/pengpeng/data-assimilation/kolmogorov_flow")
+    parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
     parser.add_argument("--data-path",          type=Path,  default="data/data_observation_500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14.pth")
     parser.add_argument("--model-path",         type=Path,  default="saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14")
     
@@ -96,15 +97,15 @@ def main(opt):
         kernel_initializer=opt.kernel_initializer,
     )
 
-    encoder = torch.load("/work/pengpeng/data-assimilation/kolmogorov_flow/saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14/lstm.ckpt", map_location=opt.device)   
+    encoder = torch.load(opt.base_path / "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14/lstm.ckpt", map_location=opt.device)
     encoder.eval()
     model.to(opt.device)
-    model = utils.load_model(model,"/work/pengpeng/data-assimilation/kolmogorov_flow/saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14/dyn_1999.ckpt",
-                       "/work/pengpeng/data-assimilation/kolmogorov_flow/saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14/retrained_rec_1999.ckpt", opt.device)
+    model = utils.load_model(model, opt.base_path / "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14/dyn_1999.ckpt",
+                       opt.base_path / "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14/retrained_rec_1999.ckpt", opt.device)
                     #    opt.base_path/"saved_model/150x150_non_const/rec.pth", opt.device)
                     
     from src.normalization import Normalize_gaussian, Normalize
-    stat = np.load("/work/pengpeng/data-assimilation/kolmogorov_flow/saved_model/cplx_Re500_1500_150x150/mean_std.npz", allow_pickle=True)
+    stat = np.load(opt.base_path / "saved_model/cplx_Re500_1500_150x150/mean_std.npz", allow_pickle=True)
     mean = stat["mean"]
     std = stat["std"]
     normalize_y = Normalize_gaussian(mean, std)

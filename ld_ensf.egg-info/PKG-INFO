@@ -1,0 +1,112 @@
+Metadata-Version: 2.4
+Name: ld-ensf
+Version: 0.1.0
+Summary: LD-EnSF: Synergizing latent dynamics with ensemble score filters for fast data assimilation
+Home-page: https://github.com/pengpeng/ld-ensf
+Author: Peng Peng
+License: MIT
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Topic :: Scientific/Engineering :: Artificial Intelligence
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: torch>=1.10.0
+Requires-Dist: numpy>=1.20.0
+Requires-Dist: deepxde>=1.10.0
+Requires-Dist: wandb>=0.12.0
+Requires-Dist: rich>=10.0.0
+Requires-Dist: prefetch-generator>=1.0.0
+Requires-Dist: matplotlib>=3.3.0
+Requires-Dist: tqdm>=4.60.0
+Provides-Extra: jax
+Requires-Dist: jax>=0.3.0; extra == "jax"
+Requires-Dist: jaxlib>=0.3.0; extra == "jax"
+Requires-Dist: jax-cfd>=0.1.0; extra == "jax"
+Provides-Extra: dev
+Requires-Dist: black>=22.0.0; extra == "dev"
+Requires-Dist: ruff>=0.0.250; extra == "dev"
+Requires-Dist: mypy>=0.991; extra == "dev"
+Requires-Dist: pre-commit>=2.20.0; extra == "dev"
+Dynamic: home-page
+Dynamic: license-file
+Dynamic: requires-python
+
+# Quantum DeepONet: Neural operators accelerated by quantum computing
+
+The data and code for the paper *Xiao, P., Si, P., and Chen, P. LD-EnSF: Synergizing latent dynamics with ensemble score filters for fast data assimilation with sparse observations. The Fourteenth International Conference on Learning Representations, 2026.*
+
+## Datasets
+
+Data generation scripts are available in the [data](data) folder:
+
+- [Antiderivative](data/ode_generation.py)
+- [Poisson's equation](data/poisson_generation.py)
+- [Advection equation](data/advection_generation.py)
+- [Burgers equation](data/burgers_generation.py)
+
+Each script generates training and testing data for the respective problem.
+
+## Code
+
+All code is in the folder [src](src). The code depends on the deep learning package [DeepXDE](https://github.com/lululxvi/deepxde) v1.10.1. 
+
+To install dependencies: 
+
+```bash
+pip install -r requirements.txt
+```
+
+To train a model for a specific task, navigate to the corresponding example directory and run:
+
+```bash
+python training.py
+```
+
+After training, simulate the trained quantum DeepONet using [Qiskit](https://www.ibm.com/quantum/qiskit). The simulation scripts are located in the same folder as the training code. To run the simulation, use:
+
+```bash
+python simulation.py
+```
+> *Note: Some tasks may use different script names for simulation; please check the example folder for details.*
+
+
+### Data-driven
+
+- [Function 1](src/data_driven/simple_function)
+- [Function 2](src/data_driven/complex_function)
+- [Antiderivative](src/data_driven/antiderivative)
+- [Advection equation](src/data_driven/advection)
+- [Burgers' equation](src/data_driven/burgers)
+
+### Physics-informed
+
+- [Antiderivative](src/physics_informed/antiderivative/)
+- [Poisson's equation](src/physics_informed/poisson/)
+
+## Cite this work
+
+If you use this data or code for academic research, you are encouraged to cite the following paper:
+
+```
+@article{Xiao2025quantumdeeponet,
+  author  = {Xiao, Pengpeng and Zheng, Muqing and Jiao, Anran and Yang, Xiu and Lu, Lu},
+  title   = {Quantum {D}eep{ON}et: {N}eural operators accelerated by quantum computing}, 
+  journal = {{Quantum}},
+  volume  = {9},
+  number  = {},
+  pages   = {1761},
+  year    = {2025},
+  doi     = {https://doi.org/10.22331/q-2025-06-04-1761}
+}
+```
+
+## Question
+
+To get help on how to use the data or code, simply open an issue in the GitHub "Issues" section.

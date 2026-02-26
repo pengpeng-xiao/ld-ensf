@@ -210,7 +210,8 @@ if __name__ == "__main__":
     parser.add_argument("--ic_dir", default="./data_stubs/")
     parser.add_argument(
         "--output_dir",
-        default="/work/pengpeng/data-assimilation/planetswe/data/",
+        default="./data/",
+        help="Output directory for generated data",
     )
     parser.add_argument("--hf0", type=float, default=10.443, help="Value for h_f0 parameter")
     parser.add_argument("--sigma", type=float, default=3.463, help="Value for sigma parameter")
