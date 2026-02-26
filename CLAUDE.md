@@ -15,6 +15,7 @@ Do not introduce packaging or distribution logic unless strictly necessary.
 
 Preserve algorithmic behavior.
 
+**You are allowed to use all the git comand**
 ---
 
 # PRIMARY OBJECTIVES
@@ -43,22 +44,3 @@ Do NOT introduce packaging files like:
 - pyproject.toml
 - setup.py
 unless explicitly requested.
-
----
-
-# PATH HANDLING RULES
-
-1. No absolute local paths:
-   - `/Users/...`
-   - `/home/...`
-   - `/nethome/...`
-   - `C:\...`
-
-2. Use `pathlib.Path`
-
-3. Define a single root strategy:
-
-```python
-from pathlib import Path
-
-REPO_ROOT = Path(__file__).resolve().parents[n]
