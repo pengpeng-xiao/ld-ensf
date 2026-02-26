@@ -1,0 +1,72 @@
+# Quantum DeepONet: Neural operators accelerated by quantum computing
+
+The data and code for the paper *Xiao, P., Si, P., and Chen, P. LD-EnSF: Synergizing latent dynamics with ensemble score filters for fast data assimilation with sparse observations. The Fourteenth International Conference on Learning Representations, 2026.*
+
+## Datasets
+
+Data generation scripts are available in the [data](data) folder:
+
+- [Antiderivative](data/ode_generation.py)
+- [Poisson's equation](data/poisson_generation.py)
+- [Advection equation](data/advection_generation.py)
+- [Burgers equation](data/burgers_generation.py)
+
+Each script generates training and testing data for the respective problem.
+
+## Code
+
+All code is in the folder [src](src). The code depends on the deep learning package [DeepXDE](https://github.com/lululxvi/deepxde) v1.10.1. 
+
+To install dependencies: 
+
+```bash
+pip install -r requirements.txt
+```
+
+To train a model for a specific task, navigate to the corresponding example directory and run:
+
+```bash
+python training.py
+```
+
+After training, simulate the trained quantum DeepONet using [Qiskit](https://www.ibm.com/quantum/qiskit). The simulation scripts are located in the same folder as the training code. To run the simulation, use:
+
+```bash
+python simulation.py
+```
+> *Note: Some tasks may use different script names for simulation; please check the example folder for details.*
+
+
+### Data-driven
+
+- [Function 1](src/data_driven/simple_function)
+- [Function 2](src/data_driven/complex_function)
+- [Antiderivative](src/data_driven/antiderivative)
+- [Advection equation](src/data_driven/advection)
+- [Burgers' equation](src/data_driven/burgers)
+
+### Physics-informed
+
+- [Antiderivative](src/physics_informed/antiderivative/)
+- [Poisson's equation](src/physics_informed/poisson/)
+
+## Cite this work
+
+If you use this data or code for academic research, you are encouraged to cite the following paper:
+
+```
+@article{Xiao2025quantumdeeponet,
+  author  = {Xiao, Pengpeng and Zheng, Muqing and Jiao, Anran and Yang, Xiu and Lu, Lu},
+  title   = {Quantum {D}eep{ON}et: {N}eural operators accelerated by quantum computing}, 
+  journal = {{Quantum}},
+  volume  = {9},
+  number  = {},
+  pages   = {1761},
+  year    = {2025},
+  doi     = {https://doi.org/10.22331/q-2025-06-04-1761}
+}
+```
+
+## Question
+
+To get help on how to use the data or code, simply open an issue in the GitHub "Issues" section.
