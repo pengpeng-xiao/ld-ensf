@@ -36,8 +36,7 @@ from tqdm import tqdm
 from src.utils import set_seed
 
 set_seed(42)
-# set_seed(43)
-# set_seed(0)
+
 
 # ==================================================================================
 # ================================ Parameter stuff =================================
@@ -68,7 +67,6 @@ y = np.linspace(-L_y/2, L_y/2, Ny)  # Array with y-points
 X, Y = np.meshgrid(x, y)             # Meshgrid for plotting
 X = np.transpose(X)                  # To get plots right
 Y = np.transpose(Y)                  # To get plots right
-# Define friction array if friction is enabled.
 
 # Define coriolis array if coriolis is enabled.
 if (use_coriolis is True):
@@ -120,10 +118,6 @@ for i in tqdm(range(Ni)):
     input = np.random.rand(2) * 0.5
     
     eta_0 = np.exp(-((X+L_x/2-input[0]*L_x)**2/(2*(0.05E+6)**2) + (Y+L_y/2-input[1]*L_y)**2/(2*(0.05E+6)**2)))
-    # eta_0_mu1 = 4.0e-10*L_x*(-L_x * input[0] + L_x/2 + x) * \
-    #     np.exp(-2.0e-10 * (-L_x * input[0] + L_x/2 + x)**2 - 2.0e-10 * (-L_y * input[1] + L_y/2 + y)**2)
-    # eta_0_mu2 = 4.0e-10 * L_y*(-L_y * input[1] + L_y/2 + y) *\
-    #      np.exp(-2.0e-10 * (-L_x * input[0] + L_x / 2 + x)**2 - 2.0e-10 * (-L_y * input[1] + L_y/2 + y)**2)
 
     eta_n = eta_0
     outputs[i, 0, :, :, :] = np.stack([u_n, v_n, eta_n])
@@ -168,18 +162,13 @@ for i in tqdm(range(Ni)):
         v_n = np.copy(v_np1)        # Update v for next iteration
         eta_n = np.copy(eta_np1)    # Update eta for next iteration
 
-        # time_step += 1  
         
         outputs[i, t// (Nt//nt) +1, :, :, :] = np.stack([u_n, v_n, eta_n])
-        # outputs[i, t// (Nt//nt), :, :, :] = np.stack([u_n, v_n, eta_n])
         
         inputs[i] = input
-        # if t >= 2000 and (t-2000) % ((Nt-2000)//nt) == 0:
-        #     outputs[i, (t-2000)//((Nt-2000)//nt) +1, :, :, :] = np.stack([u_np1, v_np1, eta_np1])
-        #     inputs[i] = input
 
 coords = np.stack([X.ravel(),Y.ravel()],axis=1)
 outputs = outputs.reshape(Ni, nt+1, 3, Nx, Ny)
 
-np.savez_compressed(f"data/data_2000_150x150_coriolis_ic_nt_400.npz", 
+np.savez_compressed(f"tsunami_modeling/data/tsunami_data.npz", 
                     u = inputs, x = coords, y = outputs, dt = dt * (Nt//nt), allow_pickle=True)

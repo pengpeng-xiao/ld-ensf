@@ -18,8 +18,8 @@ def create_training_options():
     
     # --------------- path and logging ---------------
     parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
-    parser.add_argument("--data-path",          type=Path,  default="data/data_2000_150x150_coriolis_recd_10_w_300_lr_1e-3_bs_2_ic_nor_u.pth")
-    parser.add_argument("--model-path",         type=Path,  default="saved_model/coriolis_recd_10_w_300_lr_1e-3_bs_2_ic_nor_u")
+    parser.add_argument("--data-path",          type=Path,  default="tsunami_modeling/data/observation_data.pth")
+    parser.add_argument("--model-path",         type=Path,  default="tsunami_modeling/saved_model/ldnet")
     
     # --------------- model parameter ---------------
     parser.add_argument("--num-latent-states",  type=int,   default=10)
@@ -32,7 +32,7 @@ def create_training_options():
     parser.add_argument("--const-u",            action="store_true",  default=False)
     
     # --------------- training parameter ---------------
-    parser.add_argument("--device",             type=str,   default="cuda:2")
+    parser.add_argument("--device",             type=str,   default="cuda:0")
     parser.add_argument("--seed",               type=int,   default=43)
     parser.add_argument("--batch-size",         type=int,   default=2)
     parser.add_argument("--learning-rate",      type=float, default=1e-3)
@@ -53,7 +53,6 @@ def create_training_options():
     
 def main(opt):
     ensemble_size = opt.ensemble_size
-    # noise_level = opt.noise_level * torch.tensor([0.027,0.025,0.067], device=opt.device)
     noise_level = opt.noise_level
     obs_sigma = opt.obs_sigma
     scaling = opt.scaling
@@ -64,13 +63,9 @@ def main(opt):
     wandb.init(entity="20307110428", project="SW_KF_DA", name=f"ensemble_avg_n_{opt.noise_level}_o_{obs_sigma}_s_{scaling}_alpha_{eps_alpha}_rmse", 
         dir=str(opt.base_path / f"saved_model/coriolis_recd_10_w_300_lr_1e-3_bs_2_ic_nor_u") , config=vars(opt), save_code=True)
 
-    # data_train, data_valid, data_test = load_data(opt)
     dataset = torch.load(opt.base_path / opt.data_path, map_location=opt.device, weights_only=True)
     data_test = dataset["data_test"]
-    data_train = dataset["data_train"]
-    data_valid = dataset["data_valid"]
 
-    # flat_idx = observ_idx(100, 100, 10)
     for data in [data_test]:
         data["observations"] = data["observation"][:ensemble_size]
         data["y"] = data["y"][:ensemble_size]
@@ -96,11 +91,11 @@ def main(opt):
         kernel_initializer=opt.kernel_initializer,
     )
 
-    encoder = torch.load(opt.base_path / "saved_model/coriolis_recd_10_w_300_lr_1e-3_bs_2_ic_nor_u/lstm.ckpt", map_location=opt.device)   
+    encoder = torch.load(opt.base_path / "tsunami_modeling/saved_model/ldnet", map_location=opt.device)   
     encoder.eval()
     model.to(opt.device)
-    model = utils.load_model(model, opt.base_path/"saved_model/coriolis_recd_10_w_300_lr_1e-3_bs_2_ic_nor_u/dyn_1999.ckpt",
-                       opt.base_path/"saved_model/coriolis_recd_10_w_300_lr_1e-3_bs_2_ic_nor_u/retrained_rec_1999.ckpt", opt.device)
+    model = utils.load_model(model, opt.base_path/"tsunami_modeling/saved_model/ldnet/dyn_1999.ckpt",
+                       opt.base_path/"tsunami_modeling/saved_model/ldnet/rec_1999.ckpt", opt.device)
                     #    opt.base_path/"saved_model/150x150_non_const/rec.pth", opt.device)
                     
     from src.normalization import Normalize
@@ -165,7 +160,7 @@ def main(opt):
         rmse_u = np.sqrt(np.mean((orig_u - true_u[np.newaxis,:,:])**2, axis=(2)) / np.mean(true_u[np.newaxis,:,:]**2, axis=(2)))
         rmses_u_orig.append(rmse_u)
     
-    np.savez_compressed(opt.base_path / "saved_model/coriolis_recd_10_w_300_lr_1e-3_bs_2_ic_nor_u" /f"ensemble_assimilation_output_avg_n_{opt.noise_level}_o_{obs_sigma}_s_{scaling}_rmse_seed_{opt.seed}.npz",
+    np.savez_compressed(opt.base_path / "tsunami_modeling/saved_model/ldnet" /f"ensemble_assimilation_output_avg_n_{opt.noise_level}_o_{obs_sigma}_s_{scaling}_rmse_seed_{opt.seed}.npz",
                         rmses_state = rmses_state, rmses_state_orig = rmses_state_orig,
                         rmses_latent = rmses_latent, rmses_latent_orig = rmses_latent_orig,
                         rmses_u = rmses_u, rmses_u_orig = rmses_u_orig)

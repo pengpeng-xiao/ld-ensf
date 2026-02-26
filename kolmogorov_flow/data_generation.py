@@ -48,9 +48,7 @@ for ni in tqdm(range(Ni)):
         max_courant_number=0.5,
         viscosity=1 / reynolds,
     )
-    
-    # print("dt_min: ", dt_min)
-    
+
     if dt_min > dt: 
         steps = 1
     else:
@@ -77,9 +75,7 @@ for ni in tqdm(range(Ni)):
     )
 
     yi = np.asarray(jnp.stack((u0.data, v0.data)))
-    # y[ni, 0, :, :, :] = yi
-    # print("y0: ", yi.shape)
-    
+
     for ti in range(N0+Nt):
         
         u, v = cfd.initial_conditions.wrap_variables(
@@ -94,8 +90,7 @@ for ni in tqdm(range(Ni)):
         
         if ti >= N0:
             y[ni, ti-N0, :, :, :] = yi
-        # print("y: ", y.shape)
-        
+
 x1 = np.linspace(0, 2 * math.pi, size)
 x2 = np.linspace(0, 2 * math.pi, size)
 X1, X2 = np.meshgrid(x1, x2)
@@ -103,4 +98,4 @@ X1 = np.transpose(X1)
 X2 = np.transpose(X2)
 coords = np.stack((X1.ravel(), X2.ravel()), axis=1)
         
-np.savez("data/data_cplx_Re_500_1500_150x150_test.npz", y=y, u=reynoldses, x=coords, dt=dt)
+np.savez("data/data_kolmogorov_flow.npz", y=y, u=reynoldses, x=coords, dt=dt)

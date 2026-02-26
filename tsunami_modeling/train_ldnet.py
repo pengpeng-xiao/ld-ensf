@@ -22,12 +22,12 @@ def create_training_options():
     
     # --------------- path and logging ---------------
     parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
-    parser.add_argument("--data-path",          type=Path,  default="data/data_2000_150x150_coriolis_ic.npz")
+    parser.add_argument("--data-path",          type=Path,  default="tsunami_modeling/data/tsunami_data.npz")
     parser.add_argument("--log-dir",            type=Path,  default="log")
-    parser.add_argument("--wandb-entity",       type=str,   default="20307110428",    help="user name of your W&B account")
-    parser.add_argument("--wandb-project",      type=str,   default="SW_vanilla_2000",           help="name of the W&B project")
-    parser.add_argument("--name",               type=str,   default="latent_200_1", help="name of the run")
-    parser.add_argument("--model-path",         type=Path,  default="saved_model/latent_200_1")
+    parser.add_argument("--wandb-entity",       type=str,   default=None,    help="user name of your W&B account")
+    parser.add_argument("--wandb-project",      type=str,   default=None,           help="name of the W&B project")
+    parser.add_argument("--name",               type=str,   default="ldnet", help="name of the run")
+    parser.add_argument("--model-path",         type=Path,  default="tsunami_modeling/saved_model/ldnet")
     
     # --------------- dataset parameter ---------------
     parser.add_argument("--Nt",                 type=int,   default=2000,    help="number of time slices in the original dataset")
@@ -105,22 +105,10 @@ def load_data(opt, log):
     data_valid = prep_data.get_valid_data()
     data_test = prep_data.get_test_data()
     
-    # data_train_y  = data_train["y"]
-    # mean = np.mean(data_train_y, axis=tuple(range(data_train_y.ndim-1)))
-    # std = np.std(data_train_y, axis=tuple(range(data_train_y.ndim-1)))
-    # np.savez(opt.base_path / opt.model_path / "mean_std.npz", mean=mean, std=std)
-    
-    # normalize_y = Normalize_gaussian(mean, std)
-    # data_train["y"] = normalize_y.normalize_forw(data_train_y)
-    # data_valid["y"] = normalize_y.normalize_forw(data_valid["y"])
-    # data_test["y"] = normalize_y.normalize_forw(data_test["y"])
-    np.savez(opt.base_path / "data/data_2000_150x150_coriolis_normalized_ic_nor_u.npz", data_train=data_train, data_valid=data_valid, data_test=data_test)
+    np.savez(opt.base_path / "tsunami_modeling/data/tsunami_data_normalized.npz", data_train=data_train, data_valid=data_valid, data_test=data_test)
     
     return data_train, data_valid, data_test
 
-def load_data_2(opt, log):
-    dataset = np.load("./data/data_memory_long.npz", allow_pickle=True)
-    return dict(dataset["data_train"].item()), dict(dataset["data_valid"].item()),  dict(dataset["data_test"].item())
 def main(opt):
     log = Logger(log_dir=opt.base_path /opt.model_path / opt.log_dir)
     log.info("=======================================================")
@@ -135,7 +123,7 @@ def main(opt):
     utils.set_seed(opt.seed)  
 
     data_train, data_valid, data_test = load_data(opt, log)
-    # data = np.load(opt.base_path / "data/data_2000_150x150_coriolis_normalized_0.15.npz", allow_pickle = True)
+    # data = np.load(opt.base_path / "tsunami_modeling/data/tsunami_data_normalized.npz", allow_pickle = True)
     # print(data["y"].shape)
     # data_train = data["data_train"].item()
     # data_valid = data["data_valid"].item()
@@ -162,8 +150,6 @@ def main(opt):
 
     model.to(opt.device)
     criterion = nn.MSELoss()
-    # from src.loss import RelativeL2Loss
-    # criterion = RelativeL2Loss()
     
     optimizer = optim.Adam(model.parameters(), lr=opt.learning_rate)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=opt.lr_gamma)
@@ -179,11 +165,6 @@ def main(opt):
     log.info("Training completed.")
     test_error = trainer.test(data_test)
     wandb.log({"test_error": test_error})
-    
-    # torch.save(model.dyn.state_dict(), opt.base_path / opt.model_path / "dyn.pth")
-    # torch.save(model.rec.state_dict(), opt.base_path/ opt.model_path / "rec.pth")
-    # print(f"Model saved to {opt.model_path}")
-    # wandb.save(opt.model_path, base_path=opt.base_path)
     
     log.info("Model saved. Finish training.")
     
