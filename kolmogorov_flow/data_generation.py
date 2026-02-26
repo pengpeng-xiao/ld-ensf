@@ -98,4 +98,4 @@ X1 = np.transpose(X1)
 X2 = np.transpose(X2)
 coords = np.stack((X1.ravel(), X2.ravel()), axis=1)
         
-np.savez("data/data_cplx_Re_500_1500_150x150_test.npz", y=y, u=reynoldses, x=coords, dt=dt)
+np.savez("data/data_kolmogorov_flow.npz", y=y, u=reynoldses, x=coords, dt=dt)

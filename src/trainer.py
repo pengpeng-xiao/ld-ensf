@@ -31,9 +31,6 @@ class Trainer():
 
         self.batch_size = batch_size
         self.run = run
-        # self.data_train = data_train
-        # self.data_valid = data_valid
-        # self.num_functions = data_train["u"].shape[0]
 
     def _train_or_eval(self, dataset, mode="train"):
         """
@@ -67,7 +64,6 @@ class Trainer():
         for data_i in dataloader:
             
             data_i = {key: data_i[key].to(self.device, non_blocking=True) for key in data_i.keys()}
-            # data_i = {k: v.cuda(non_blocking=True) for k, v in data_i.items()}
             
             if is_train:
                 self.model.train()
@@ -132,24 +128,7 @@ class Trainer():
             
             
             if (epoch+1) % 100 == 0 and save_path is not None:
-                self.save_checkpoint(epoch, save_path)
-                # if hasattr(self.model, "dyn"): #! use this version for vanilla ldnet
-                #     torch.save(self.model.dyn.state_dict(), save_path / f"dyn_{epoch}.ckpt")
-
-                # if hasattr(self.model, "rec"):
-                #     torch.save(self.model.rec.state_dict(), save_path / f"rec_{epoch}.ckpt")
-                # print(f"Model saved to {save_path}")
-                    # wandb.save(save_path, base_path=save_path)
-
-    def save_checkpoint(self, epoch, save_path):
-        checkpoint = {
-            'epoch': epoch,
-            'model_state': self.model.state_dict(),
-            'optimizer_state': self.optimizer.state_dict(),
-            'scheduler_state': self.lr_scheduler.state_dict() if self.lr_scheduler else None,
-            "run_id": self.run.id if self.run else None,
-        }
-        torch.save(checkpoint, save_path / f'ckpt_{epoch}.pt')
-        print(f"Saved checkpoint: epoch {epoch}")
-                
+                    torch.save(self.model.dyn.state_dict(), save_path / f"dyn_{epoch}.ckpt")
+                    torch.save(self.model.rec.state_dict(), save_path / f"rec_{epoch}.ckpt")
+                    print(f"Model saved to {save_path}")
                 
