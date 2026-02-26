@@ -73,10 +73,8 @@ def load_data(opt):
     new_shape = dataset['y'].shape[:-2] + (-1,)
     dataset["y"] = dataset["y"].reshape(new_shape).transpose(0,1,3,2)
 
-    # dataset["u"] = np.tile(dataset["u"][:, None, None], (1, dataset["y"].shape[1], 1))
     dataset["u"] = dataset["u"][:, None]
-    
-    
+
     dataset["x"] = np.broadcast_to(dataset["x"][None,None,:,:], (dataset["y"].shape[0], 
                 dataset["y"].shape[1], dataset["x"].shape[-2], dataset["x"].shape[-1]))
     
@@ -161,10 +159,7 @@ def main(opt):
     log.info("Training completed.")
     test_error = trainer.test(data_test)
     wandb.log({"test_error": test_error})
-    
-    # torch.save(model.dyn.state_dict(), opt.base_path / opt.model_path / "dyn.pth")
-    # torch.save(model.rec.state_dict(), opt.base_path/ opt.model_path / "rec.pth")
-    # print(f"Model saved to {opt.model_path}")
+
     wandb.save(opt.model_path, base_path=opt.base_path)
     
     log.info("Model saved. Finish training.")
