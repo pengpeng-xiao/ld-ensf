@@ -93,8 +93,6 @@ def load_from_hdf5(file_list):
             phi = f["scales/phi_hash_7b8ec7cabc40ac4b596a5ef833e9eab019f07d46"][:]
             theta = f["scales/theta_hash_7371cda98b66ed3211b41cdb54c08495aa28ea62"][:]
             phi_grid, theta_grid = np.meshgrid(phi, theta)
-            # phi_grid = phi_grid.T
-            # theta_grid = theta_grid.T
             coords.append(np.stack([phi_grid.ravel(), theta_grid.ravel()], axis=-1))
     h = np.stack(h, axis=0).astype(np.float32)
     print("==========h.shape==========", h.shape)
@@ -102,14 +100,12 @@ def load_from_hdf5(file_list):
     print("==========u.shape==========", u.shape)
     dataset["y"] = np.concatenate([h[...,np.newaxis], u], axis=-1).astype(np.float32)
     print(dataset["y"].shape)
-    # dataset["u"] = dataset["y"][:,1].astype(np.float32)
     dataset["x"] = np.stack(coords, axis=0).astype(np.float32)
     print("dataset['x'].shape", dataset["x"].shape)
     hf0s = np.stack(hf0s, axis=0)
     sigmas = np.stack(sigmas, axis=0)
     dataset["u"] = np.stack((hf0s, sigmas), axis=-1).astype(np.float32)
     print("u shape", dataset["u"].shape)
-    # dataset["x"] = coords
     return dataset
     
 def load_data(opt, log):
@@ -126,15 +122,10 @@ def load_data(opt, log):
         interval = opt.interval 
         dataset["y"] = dataset["y"][:, ::1, :, :, :] #! we don't deal with time slice in this version
         B, T, H, W, C = dataset["y"].shape
-        # new_shape = dataset['y'].shape[:-2] + (-1,)
         dataset["y"] = dataset["y"].reshape(B, T, H * W, C)
-        # dataset["u"] = np.tile(dataset["u"][:, None, :], (1, dataset["y"].shape[1], 1))
-        # dataset["x"] = np.broadcast_to(dataset["x"][None,None,:,:], (dataset["y"].shape[0], 
-        #             dataset["y"].shape[1], dataset["x"].shape[-2], dataset["x"].shape[-1]))
-        dataset["x"] = np.broadcast_to(dataset["x"][:,None,:,:], (dataset["y"].shape[0], 
+        dataset["x"] = np.broadcast_to(dataset["x"][:,None,:,:], (dataset["y"].shape[0],
                 dataset["y"].shape[1], dataset["x"].shape[-2], dataset["x"].shape[-1]))
-        # ------------------ normalize dataset ------------------
-        # dt_normalize = opt.dt_normalize / interval
+
         dataset["dt"] = np.array(opt.dt).astype(np.float32)
         normlize_x = Normalize([0, 0], [2 * np.pi, np.pi])
         dataset["x"] = normlize_x.normalize_forw(dataset["x"])
@@ -176,9 +167,6 @@ def main(opt):
     data_valid = data["data_valid"].item()
     data_test = data["data_test"].item()
     log.info("Data loaded.")
-    
-    # data_train = select_space_subset(data_train, opt.num_points_train)
-    # data_valid = select_space_subset(data_valid, opt.num_points_valid)
 
     dim_x = data_train["x"].shape[-1]
     dim_y = data_train["y"].shape[-1]
@@ -186,19 +174,14 @@ def main(opt):
     # Define model
     input_shape_r = opt.num_latent_states + dim_x
     model = LDNN(
-                # opt.fourier_mapping_size,
                 [opt.num_latent_states + 2] + opt.NN_dyn_depth * [opt.NN_dyn_width] + [opt.num_latent_states],
                 [input_shape_r] + opt.NN_rec_depth * [opt.NN_rec_width] + [dim_y],
                 activation=opt.activation,
                 kernel_initializer=opt.kernel_initializer,
     )
-    # model = torch.nn.DataParallel(model)
     model.to(opt.device)
-    # model.cuda()
     criterion = nn.MSELoss()
-    # from src.loss import RelativeL2Loss
-    # criterion = RelativeL2Loss()
-    
+
     optimizer = optim.Adam(model.parameters(), lr=opt.learning_rate)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=200, gamma=opt.lr_gamma)
 
@@ -212,10 +195,7 @@ def main(opt):
     log.info("Training completed.")
     test_error = trainer.test(data_test)
     wandb.log({"test_error": test_error})
-    
-    # torch.save(model.dyn.state_dict(), opt.base_path / opt.model_path / "dyn.pth")
-    # torch.save(model.rec.state_dict(), opt.base_path/ opt.model_path / "rec.pth")
-    # print(f"Model saved to {opt.model_path}")
+
     wandb.save(opt.model_path, base_path=opt.base_path)
     
     log.info("Model saved. Finish training.")

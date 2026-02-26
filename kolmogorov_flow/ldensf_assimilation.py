@@ -61,16 +61,14 @@ def main(opt):
     euler_steps = opt.euler_steps
     utils.set_seed(opt.seed)  
 
-    wandb.init(entity="20307110428", project="KF_DA", name=f"avg_n_{noise_level}_o_{obs_sigma}_s_{scaling}_rmse", 
-        dir=str(opt.base_path / f"saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14") , config=vars(opt), save_code=True)
-    
-    # data_train, data_valid, data_test = load_data(opt)
+    wandb.init(entity="20307110428", project="KF_DA", name=f"avg_n_{noise_level}_o_{obs_sigma}_s_{scaling}_rmse",
+        dir=str(opt.base_path / f"saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14"), config=vars(opt), save_code=True)
+
     dataset = torch.load(opt.base_path / opt.data_path, map_location=opt.device, weights_only=True)
     data_test = dataset["data_test"]
     data_train = dataset["data_train"]
     data_valid = dataset["data_valid"]
 
-    # flat_idx = observ_idx(100, 100, 10)
     for data in [data_test]:
         data["observations"] = data["observation"][:ensemble_size]
         data["y"] = data["y"][:ensemble_size]
@@ -102,8 +100,7 @@ def main(opt):
     model.to(opt.device)
     model = utils.load_model(model, opt.base_path / "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14/dyn_1999.ckpt",
                        opt.base_path / "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14/retrained_rec_1999.ckpt", opt.device)
-                    #    opt.base_path/"saved_model/150x150_non_const/rec.pth", opt.device)
-                    
+
     from src.normalization import Normalize_gaussian, Normalize
     stat = np.load(opt.base_path / "saved_model/cplx_Re500_1500_150x150/mean_std.npz", allow_pickle=True)
     mean = stat["mean"]

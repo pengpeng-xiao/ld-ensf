@@ -25,11 +25,8 @@ def create_training_options():
     
     # --------------- dataset parameter ---------------
     parser.add_argument("--prop-train",         type=float, default=0.6)
-    parser.add_argument("--prop-valid",         type=float, default=0.2)  
+    parser.add_argument("--prop-valid",         type=float, default=0.2)
     parser.add_argument("--prop-test",          type=float, default=0.2)
-    # parser.add_argument("--prop-train",         type=float, default=0.0)
-    # parser.add_argument("--prop-valid",         type=float, default=0.0)  
-    # parser.add_argument("--prop-test",          type=float, default=1.0)
     parser.add_argument("--interval",           type=int,   default=5,     help="time interval between two time slices")
     parser.add_argument("--dt-normalize",       type=float, default=1.0)
     
@@ -63,8 +60,7 @@ def load_data(opt):
     dataset["y"] = dataset["y"].reshape(new_shape).transpose(0,1,3,2)
     
     dataset["u"] = dataset["u"][:, None]
-    # dataset["u"] = np.tile(dataset["u"][:, None, None], (1, dataset["y"].shape[1], 1))
-    
+
     dataset["x"] = np.broadcast_to(dataset["x"][None,None,:,:], (dataset["y"].shape[0], 
                 dataset["y"].shape[1], dataset["x"].shape[-2], dataset["x"].shape[-1]))
     
@@ -134,11 +130,8 @@ def main(opt):
     )
 
     model.to(opt.device)
-    # model = load_model(model, opt.base_path / opt.model_path / "dyn_1999.ckpt",
-    #                    opt.base_path / opt.model_path / "rec_1999.ckpt", opt.device)
     torch.load(opt.base_path / "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14/ckpt_1999.pt", map_location=opt.device)
-    
-    
+
     for data in [data_train, data_valid, data_test]:
         with torch.no_grad():
             latent_states = model(data, opt.device, latent_state=True)
