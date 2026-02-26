@@ -137,7 +137,6 @@ class FourierEmbedding(torch.nn.Module):
 
     def __init__(self, in_feats, out_feats):
         super().__init__()
-        print("initialized B here")
         self.encoding = torch.nn.Linear(in_feats, out_feats, bias=False)
         self.encoding.weight.requires_grad = False
 
@@ -394,13 +393,11 @@ class LDNN(dde.nn.NN):
                 return g_tau(t) * score_x
 
             if i == 0:
-                print(i)
                 latent = torch.concatenate((self.state.view(self.state.shape[0], -1), u), dim=1)
                 post_state = self.reverse_SDE(x0=latent * scaling, score_likelihood=score_likelihood,
                                               time_steps=euler_steps, device=device, eps_alpha=eps_alpha) / scaling
                 self.state = post_state[:, :self.state.shape[1]]
                 u = post_state[:, self.state.shape[1]:]
-                print("u", u[0])
                 u_history.append(u)
             self.state_history.append(self.state)
 
@@ -702,7 +699,6 @@ class ResFourierLDNN(LDNN):
             self.state_history.append(self.state)
             u_history.append(u)
 
-        print("forward time: ", forward_time)
         self.state_history = torch.stack(self.state_history).transpose(0, 1)
         u_history = torch.stack(u_history).transpose(0, 1)
 
