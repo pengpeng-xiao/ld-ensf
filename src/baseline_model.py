@@ -5,9 +5,7 @@ import numpy as np
 import numpy.linalg as nla
 import numpy.random as rnd
 from .encoder import TimeSeriesLSTM
-from .resnet import ResNN
-from .fourier_ldnet import FourierEmbedding, FourierRec
-from .model import LDNN
+from .model import LDNN, ResNN, FourierEmbedding, FourierRec
 
 parallel = 40
 
