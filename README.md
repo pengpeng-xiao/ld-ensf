@@ -2,16 +2,7 @@
 
 Code for the paper: *Xiao, P., Si, P., and Chen, P. LD-EnSF: Synergizing latent dynamics with ensemble score filters for fast data assimilation with sparse observations. The Fourteenth International Conference on Learning Representations (ICLR), 2026.*
 
-## Overview
-
-LD-EnSF combines latent-dynamics neural networks with ensemble score filters to perform fast data assimilation with sparse observations across three domains:
-- Atmospheric modeling (Shallow Water Equations on sphere)
-- Tsunami modeling (Shallow Water Equations)
-- Kolmogorov flow (2D turbulent fluid dynamics)
-
 ## Installation
-
-### Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -23,103 +14,102 @@ Core dependencies:
 - NumPy >= 1.20.0
 - wandb (for experiment tracking)
 
-Optional (for data generation):
-- JAX >= 0.3.0
-- jax-cfd >= 0.1.0
+Optional dependencies for data generation:
+- Kolmogorov flow: JAX >= 0.3.0, jax-cfd >= 0.1.0
+- Atmospheric modeling: Dedalus >= 3.0 (spectral PDE solver)
 
 ## Repository Structure
 
 ```
 .
-├── src/                        # Core library
-│   ├── model.py               # LD-EnSF model architectures
-│   ├── train.py               # Training utilities
-│   ├── encoder.py             # Encoder networks (CNN, LSTM, RNN)
-│   ├── dataloader.py          # Data loading utilities
-│   ├── normalization.py       # Normalization classes
-│   └── utils.py               # Helper functions
-├── kolmogorov_flow/           # Kolmogorov flow experiments
-│   ├── train_ldnet.py         # Train latent dynamics network
-│   ├── train_lstm.py          # Train LSTM encoder
-│   ├── observation_data.py    # Generate observation data
-│   ├── ldensf_assimilation.py # Run data assimilation
-│   └── data_generation.py     # Generate training data (JAX)
-├── atmospheric_modeling/      # Atmospheric modeling experiments
-│   └── [similar structure]
-└── tsunami_modeling/          # Tsunami modeling experiments
-    └── [similar structure]
+├── src/                            # Core library
+│   ├── model.py                   # Model architectures (LDNN, ResLDNN, FourierLDNN, ResFourierLDNN)
+│   ├── train.py / trainer.py      # Training utilities
+│   ├── encoder.py                 # Encoder networks (CNN, LSTM, RNN)
+│   ├── dataloader.py              # Data loading
+│   ├── data_preprocess.py         # Preprocessing
+│   ├── normalization.py           # Normalization classes
+│   └── utils.py                   # Helper functions
+├── kolmogorov_flow/               # Kolmogorov flow experiments
+├── atmospheric_modeling/          # Atmospheric modeling experiments
+└── tsunami_modeling/              # Tsunami modeling experiments
 ```
 
-## Usage
+Each domain folder contains the same five scripts: `data_generation.py`, `train_ldnet.py`, `observation_data.py`, `train_lstm.py`, `ldensf_assimilation.py`.
 
-### Running from Repository Root
+## Pipeline
 
-Set PYTHONPATH to the repository root:
+The workflow follows five steps. Examples below use Kolmogorov flow; other domains are identical unless noted. Set `PYTHONPATH` to the repository root before running:
 
 ```bash
 export PYTHONPATH=/path/to/ld-ensf:$PYTHONPATH
 ```
 
-### Training a Model
-
-Each domain has training scripts that require a `--base-path` argument:
+### Step 1 — Generate Data
 
 ```bash
-# Kolmogorov flow example
-cd kolmogorov_flow
-python train_ldnet.py --base-path /path/to/data/kolmogorov_flow
+python kolmogorov_flow/data_generation.py
 ```
 
-Key arguments:
-- `--base-path`: Base directory containing data and models (required)
-- `--data-path`: Relative path to training data
-- `--model-path`: Relative path for saving checkpoints
-- `--num-latent-states`: Dimension of latent space
-- `--device`: CUDA device (e.g., "cuda:0")
+> **Atmospheric modeling** uses a Dedalus-based MPI solver instead. `data_generation.sh` runs the solver across 200 trajectories with randomized forcing parameters and splits the output into 120 train / 40 valid / 40 test directories:
+> ```bash
+> bash atmospheric_modeling/data_generation.sh
+> ```
 
-See individual training scripts for full argument lists.
-
-### Data Assimilation
-
-After training, run data assimilation:
+### Step 2 — Train the Latent Dynamics Network
 
 ```bash
-python ldensf_assimilation.py --base-path /path/to/data/kolmogorov_flow
+python kolmogorov_flow/train_ldnet.py \
+    --base-path /path/to/base \
+    --data-path kolmogorov_flow/data/kolmogorov_data.npz \
+    --model-path kolmogorov_flow/saved_model/ldnet \
+    --num-latent-states 9 \
+    --device cuda:0
 ```
 
-## Model Architecture
+### Step 3 — Generate Observation Data with Latent Trajectories
 
-### Latent Dynamics Network (LDNN)
+Run the trained LDNet to extract latent state trajectories and add sparse observation points. Output is saved as a `.pth` file used in Step 4.
 
-- **Dynamics network**: Maps latent state + parameters → latent state derivative
-- **Reconstruction network**: Maps latent state + space → physical state
-- Supports Fourier embeddings and residual connections
+```bash
+python kolmogorov_flow/observation_data.py \
+    --base-path /path/to/base \
+    --data-path kolmogorov_flow/data/kolmogorov_data.npz \
+    --model-path kolmogorov_flow/saved_model/ldnet
+```
 
-### Variants
+### Step 4 — Train the LSTM Encoder
 
-- `LDNN`: Basic latent dynamics model
-- `ResLDNN`: With residual connections in dynamics
-- `FourierLDNN`: With Fourier feature embeddings
-- `ResFourierLDNN`: Combines both enhancements
+Train an LSTM to map sparse observation sequences to latent trajectories.
+
+```bash
+python kolmogorov_flow/train_lstm.py \
+    --data-path kolmogorov_flow/data/observation_data.pth \
+    --save-path kolmogorov_flow/saved_model/lstm
+```
+
+### Step 5 — Offline Data Assimilation (LD-EnSF)
+
+```bash
+python kolmogorov_flow/ldensf_assimilation.py \
+    --base-path /path/to/base \
+    --data-path kolmogorov_flow/data/observation_data.pth \
+    --model-path kolmogorov_flow/saved_model/ldnet
+```
 
 ## Citation
 
-If you use this code for academic research, please cite:
-
 ```bibtex
-@inproceedings{xiao2026ldensf,
-  title={{LD}-{E}n{SF}: Synergizing latent dynamics with ensemble score filters for fast data assimilation with sparse observations},
-  author={Xiao, Pengpeng and Si, Peng and Chen, Peng},
+@inproceedings{
+  xiao2026ldensf,
+  title={{LD}-En{SF}: Synergizing Latent Dynamics with Ensemble Score Filters for Fast Data Assimilation with Sparse Observations},
+  author={Pengpeng Xiao and Phillip Si and Peng Chen},
   booktitle={The Fourteenth International Conference on Learning Representations},
   year={2026},
-  url={https://openreview.net/forum?id=XXXXXXXX}
+  url={https://openreview.net/forum?id=AWSVzzhbr7}
 }
 ```
 
 ## Questions
 
 Open an issue in the GitHub "Issues" section for help with the code or data.
-
-## License
-
-MIT License
