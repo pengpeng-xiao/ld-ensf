@@ -16,7 +16,7 @@ Core dependencies:
 
 Optional dependencies for data generation:
 - Kolmogorov flow: JAX >= 0.3.0, jax-cfd >= 0.1.0
-- Atmospheric modeling: Dedalus >= 3.0 (spectral PDE solver)
+- Atmospheric modeling: Dedalus >= 3.0 
 
 ## Repository Structure
 
@@ -63,7 +63,6 @@ python kolmogorov_flow/train_ldnet.py \
     --base-path /path/to/base \
     --data-path kolmogorov_flow/data/kolmogorov_data.npz \
     --model-path kolmogorov_flow/saved_model/ldnet \
-    --num-latent-states 9 \
     --device cuda:0
 ```
 
