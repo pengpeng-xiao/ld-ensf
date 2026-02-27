@@ -91,7 +91,7 @@ def main(opt):
         kernel_initializer=opt.kernel_initializer,
     )
 
-    encoder = torch.load(opt.base_path / "tsunami_modeling/saved_model/ldnet", map_location=opt.device)   
+    encoder = torch.load(opt.base_path / "tsunami_modeling/saved_model/ldnet/lstm.ckpt", map_location=opt.device)   
     encoder.eval()
     model.to(opt.device)
     model = utils.load_model(model, opt.base_path/"tsunami_modeling/saved_model/ldnet/dyn_1999.ckpt",
@@ -106,7 +106,7 @@ def main(opt):
     rmses_state_orig, rmses_latent_orig, rmses_u_orig = [], [], []
     
     utils.set_seed(opt.seed)  
-    for true_traj in range(2):
+    for true_traj in range(10):
         observation = data_test["observation"][true_traj]
         true_state = data_test["y"][true_traj].detach().cpu().numpy()
         true_latent = data_test["latent_states"][true_traj].detach().cpu().numpy()

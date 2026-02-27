@@ -53,7 +53,7 @@ def create_training_options():
     
     # --------------- training parameter ---------------
     parser.add_argument("--device",             type=str,   default="cuda:0")
-    parser.add_argument("--seed",               type=int,   default=43)
+    parser.add_argument("--seed",               type=int,   default=42)
     parser.add_argument("--batch-size",         type=int,   default=2)
     parser.add_argument("--learning-rate",      type=float, default=1e-3)
     parser.add_argument("--num-epochs",         type=int,   default=2000)

@@ -22,12 +22,12 @@ def create_training_options():
     
     # --------------- path and logging ---------------
     parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
-    parser.add_argument("--data-path",          type=Path,  default="data/data_cplx_Re_500_1500_150x150.npz")
+    parser.add_argument("--data-path",          type=Path,  default="kolmogorov_flow/data/kolmogorov_data.npz")
     parser.add_argument("--log-dir",            type=Path,  default="log")
-    parser.add_argument("--wandb-entity",       type=str,   default="20307110428",    help="user name of your W&B account")
-    parser.add_argument("--wandb-project",      type=str,   default="KF",           help="name of the W&B project")
-    parser.add_argument("--name",               type=str,   default="cplx_Re500_1500_150x150_resnet_foureir_10_freeze_gamma_0.5_resd_14", help="name of the run")
-    parser.add_argument("--model-path",         type=Path,  default="saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14")
+    parser.add_argument("--wandb-entity",       type=str,   default=None,    help="user name of your W&B account")
+    parser.add_argument("--wandb-project",      type=str,   default=None,           help="name of the W&B project")
+    parser.add_argument("--name",               type=str,   default="ldnet", help="name of the run")
+    parser.add_argument("--model-path",         type=Path,  default="kolmogorov_flow/saved_model/ldnet")
     
     # --------------- dataset parameter ---------------
     parser.add_argument("--num-points-train",   type=int,   default=5000,   help="number of spatial points in training set")

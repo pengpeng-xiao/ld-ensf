@@ -17,7 +17,7 @@ import re
 from src import utils
 from src.logger import Logger
 from src.data_preprocess import DataPreprocessor, select_space_subset
-from src.model import LDNN
+from src.model import ResFourierLDNN
 from src.train import Trainer
 from src.normalization import Normalize, Normalize_gaussian
 
@@ -26,12 +26,12 @@ def create_training_options():
     
     # --------------- path and logging ---------------
     parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
-    parser.add_argument("--data-path",          type=Path,  default="data_parameter_shuf")
+    parser.add_argument("--data-path",          type=Path,  default="atmospheric_modeling/data_parameter_shuf")
     parser.add_argument("--log-dir",            type=Path,  default="log")
-    parser.add_argument("--wandb-entity",       type=str,   default="20307110428",    help="user name of your W&B account")
-    parser.add_argument("--wandb-project",      type=str,   default="planetswe",           help="name of the W&B project")
-    parser.add_argument("--name",               type=str,   default="parameter_shuf_t21d_orig", help="name of the run")
-    parser.add_argument("--model-path",         type=Path,  default="saved_model/parameter_shuf_t21d_orig")
+    parser.add_argument("--wandb-entity",       type=str,   default=None,    help="user name of your W&B account")
+    parser.add_argument("--wandb-project",      type=str,   default=None,           help="name of the W&B project")
+    parser.add_argument("--name",               type=str,   default="atmospheric_modeling/ldnet", help="name of the run")
+    parser.add_argument("--model-path",         type=Path,  default="atmospheric_modeling/saved_model/ldnet")
     
     # --------------- dataset parameter ---------------
     parser.add_argument("--num-points-train",   type=int,   default=5000,   help="number of spatial points in training set")
@@ -95,17 +95,14 @@ def load_from_hdf5(file_list):
             phi_grid, theta_grid = np.meshgrid(phi, theta)
             coords.append(np.stack([phi_grid.ravel(), theta_grid.ravel()], axis=-1))
     h = np.stack(h, axis=0).astype(np.float32)
-    print("==========h.shape==========", h.shape)
     u = np.stack(u, axis=0).transpose(0,1,3,4,2).astype(np.float32)
-    print("==========u.shape==========", u.shape)
     dataset["y"] = np.concatenate([h[...,np.newaxis], u], axis=-1).astype(np.float32)
-    print(dataset["y"].shape)
     dataset["x"] = np.stack(coords, axis=0).astype(np.float32)
-    print("dataset['x'].shape", dataset["x"].shape)
+
     hf0s = np.stack(hf0s, axis=0)
     sigmas = np.stack(sigmas, axis=0)
     dataset["u"] = np.stack((hf0s, sigmas), axis=-1).astype(np.float32)
-    print("u shape", dataset["u"].shape)
+
     return dataset
     
 def load_data(opt, log):
@@ -120,7 +117,7 @@ def load_data(opt, log):
     for dataset in [data_train, data_valid, data_test]:
         # --------------- select needed time slices and reshape ---------------
         interval = opt.interval 
-        dataset["y"] = dataset["y"][:, ::1, :, :, :] #! we don't deal with time slice in this version
+        dataset["y"] = dataset["y"][:, ::1, :, :, :] # we don't deal with time slice in this version
         B, T, H, W, C = dataset["y"].shape
         dataset["y"] = dataset["y"].reshape(B, T, H * W, C)
         dataset["x"] = np.broadcast_to(dataset["x"][:,None,:,:], (dataset["y"].shape[0],
@@ -142,7 +139,7 @@ def load_data(opt, log):
     data_train = select_space_subset(data_train, opt.num_points_train)
     data_valid = select_space_subset(data_valid, opt.num_points_valid)
     
-    np.savez_compressed(opt.base_path / opt.data_path / "data_preprocessed_n5000_t21d.npz", data_train=data_train, data_valid=data_valid, data_test=data_test)
+    np.savez_compressed(opt.base_path / opt.data_path / "data_normalized.npz", data_train=data_train, data_valid=data_valid, data_test=data_test)
     
     return data_train, data_valid, data_test
     
@@ -160,9 +157,8 @@ def main(opt):
     utils.set_seed(opt.seed)  
 
     data_train, data_valid, data_test = load_data(opt, log)
-    # stop here
-    return data_train, data_valid, data_test
-    data = np.load(opt.base_path / opt.data_path /"data_preprocessed_n5000_t21d.npz", allow_pickle = True)
+
+    data = np.load(opt.base_path / opt.data_path /"data_normalized.npz", allow_pickle = True)
     data_train = data["data_train"].item()
     data_valid = data["data_valid"].item()
     data_test = data["data_test"].item()
@@ -173,7 +169,7 @@ def main(opt):
     
     # Define model
     input_shape_r = opt.num_latent_states + dim_x
-    model = LDNN(
+    model = ResFourierLDNN(
                 [opt.num_latent_states + 2] + opt.NN_dyn_depth * [opt.NN_dyn_width] + [opt.num_latent_states],
                 [input_shape_r] + opt.NN_rec_depth * [opt.NN_rec_width] + [dim_y],
                 activation=opt.activation,

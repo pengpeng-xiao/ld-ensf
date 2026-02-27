@@ -207,10 +207,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     n_cores = mp.cpu_count()
     parser.add_argument("--index", type=int, default=0)
-    parser.add_argument("--ic_dir", default="./data_stubs/")
+    parser.add_argument("--ic_dir", default="atmospheric_modeling/data_stubs/")
     parser.add_argument(
         "--output_dir",
-        default="./data/",
+        default="atmospheric_modeling/data/",
         help="Output directory for generated data",
     )
     parser.add_argument("--hf0", type=float, default=10.443, help="Value for h_f0 parameter")

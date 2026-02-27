@@ -68,8 +68,8 @@ if __name__ == "__main__":
     dropout = 0
     epsilon = 1
     # TODO: Update these paths to match your environment
-    data_path = "data/data_observation_500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14.pth"
-    save_path = "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14"
+    data_path = "kolmogorov_flow/data/observation_data.pth"
+    save_path = "kolmogorov_flow/saved_model/lstm"
     config={
         "device": str(device),
         "epochs": epochs,
@@ -78,6 +78,6 @@ if __name__ == "__main__":
         "dropout": dropout,
         "learning_rate": 1e-4,
     }
-    wandb.init(entity="20307110428", project="SW_KF_lstm", name="cplx_Re500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14", 
+    wandb.init(entity=None, project=None, name=None, 
             dir=save_path, config=config, save_code=True)
     main(device, epochs, data_path, hidden_size, num_layers, dropout, save_path, epsilon)

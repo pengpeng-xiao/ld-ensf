@@ -12,7 +12,7 @@ from tqdm import tqdm
 from src import utils
 
 size = 150
-Ni = 100
+Ni = 200
 Nt = 200
 N0 = 100
 dt = 0.04
@@ -98,4 +98,4 @@ X1 = np.transpose(X1)
 X2 = np.transpose(X2)
 coords = np.stack((X1.ravel(), X2.ravel()), axis=1)
         
-np.savez("data/data_kolmogorov_flow.npz", y=y, u=reynoldses, x=coords, dt=dt)
+np.savez("kolmogorov_flow/data/kolmogorov_data.npz", y=y, u=reynoldses, x=coords, dt=dt)

@@ -18,8 +18,8 @@ def create_training_options():
     
     # --------------- path and logging ---------------
     parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
-    parser.add_argument("--data-path",          type=Path,  default="data/data_observation_500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14.pth")
-    parser.add_argument("--model-path",         type=Path,  default="saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14")
+    parser.add_argument("--data-path",          type=Path,  default="kolmogorov_flow/data/observation_data.pth")
+    parser.add_argument("--model-path",         type=Path,  default="kolmogorov_flow/saved_model/ldnet")
     
     # --------------- model parameter ---------------
     parser.add_argument("--num-latent-states",  type=int,   default=9)
@@ -33,7 +33,7 @@ def create_training_options():
     parser.add_argument("--const-u",            action="store_true",  default=False)
     
     # --------------- training parameter ---------------
-    parser.add_argument("--device",             type=str,   default="cuda:3")
+    parser.add_argument("--device",             type=str,   default="cuda:0")
     parser.add_argument("--seed",               type=int,   default=42)
     parser.add_argument("--batch-size",         type=int,   default=2)
     parser.add_argument("--learning-rate",      type=float, default=1e-3)
@@ -61,8 +61,8 @@ def main(opt):
     euler_steps = opt.euler_steps
     utils.set_seed(opt.seed)  
 
-    wandb.init(entity="20307110428", project="KF_DA", name=f"avg_n_{noise_level}_o_{obs_sigma}_s_{scaling}_rmse",
-        dir=str(opt.base_path / f"saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14"), config=vars(opt), save_code=True)
+    wandb.init(entity=None, project=None, name=f"avg_n_{noise_level}_o_{obs_sigma}_s_{scaling}_rmse",
+        dir=str(opt.base_path / f"kolmogorov_flow/saved_model/ldnet"), config=vars(opt), save_code=True)
 
     dataset = torch.load(opt.base_path / opt.data_path, map_location=opt.device, weights_only=True)
     data_test = dataset["data_test"]
@@ -95,14 +95,14 @@ def main(opt):
         kernel_initializer=opt.kernel_initializer,
     )
 
-    encoder = torch.load(opt.base_path / "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14/lstm.ckpt", map_location=opt.device)
+    encoder = torch.load(opt.base_path / "kolmogorov_flow/saved_model/ldnet/lstm.ckpt", map_location=opt.device)
     encoder.eval()
     model.to(opt.device)
-    model = utils.load_model(model, opt.base_path / "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14/dyn_1999.ckpt",
-                       opt.base_path / "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14/retrained_rec_1999.ckpt", opt.device)
+    model = utils.load_model(model, opt.base_path / "kolmogorov_flow/saved_model/ldnet/dyn_1999.ckpt",
+                       opt.base_path / "kolmogorov_flow/saved_model/ldnet/retrained_rec_1999.ckpt", opt.device)
 
     from src.normalization import Normalize_gaussian, Normalize
-    stat = np.load(opt.base_path / "saved_model/cplx_Re500_1500_150x150/mean_std.npz", allow_pickle=True)
+    stat = np.load(opt.base_path / "kolmogorov_flow/saved_model/ldnet/mean_std.npz", allow_pickle=True)
     mean = stat["mean"]
     std = stat["std"]
     normalize_y = Normalize_gaussian(mean, std)
@@ -118,7 +118,6 @@ def main(opt):
         true_u = np.repeat(true_u[None,:], true_state.shape[0], axis=0)
         orig_u = np.repeat(data_test["u"].detach().cpu().numpy()[:,None,:], true_state.shape[0], axis=1)
         
-        # optimal_latent = torch.load(opt.base_path / "saved_model/150x150_non_const/optimal_test_latent.pth", map_location=opt.device)[:20]
         assimilated_states = model.forward_data_assimilation_ensf(data=data_test, observations=observation, encoder=encoder, noise_level=noise_level, 
                                                                 device=opt.device, optimal_latent=None, scaling=scaling, obs_sigma=obs_sigma, 
                                                                 eps_alpha=eps_alpha, euler_steps=euler_steps).detach().cpu().numpy()
@@ -165,7 +164,7 @@ def main(opt):
         
         print(f"finished {true_traj}th trajectory")
     
-    np.savez_compressed(opt.base_path / "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14" /f"ensemble_assimilation_output_avg_n_{noise_level}_o_{obs_sigma}_s_{scaling}_seed_{opt.seed}_rmse.npz",
+    np.savez_compressed(opt.base_path / "kolmogorov_flow/saved_model/ldnet" /f"ensemble_assimilation_output_avg_n_{noise_level}_o_{obs_sigma}_s_{scaling}_seed_{opt.seed}_rmse.npz",
                         rmses_state = rmses_state, rmses_state_orig = rmses_state_orig,
                         rmses_latent = rmses_latent, rmses_latent_orig = rmses_latent_orig,
                         rmses_u = rmses_u, rmses_u_orig = rmses_u_orig)

@@ -18,8 +18,8 @@ def create_training_options():
     
     # --------------- path and logging ---------------
     parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
-    parser.add_argument("--data-path",          type=Path,  default="observation_32.pth")
-    parser.add_argument("--model-path",         type=Path,  default="saved_model/parameter_shuf_t21d")
+    parser.add_argument("--data-path",          type=Path,  default="observation_data.pth")
+    parser.add_argument("--model-path",         type=Path,  default="saved_model/ldnet")
     
     # --------------- model parameter ---------------
     parser.add_argument("--num-latent-states",  type=int,   default=50)
@@ -33,7 +33,7 @@ def create_training_options():
     parser.add_argument("--const-u",            action="store_true",  default=False)
     
     # --------------- training parameter ---------------
-    parser.add_argument("--device",             type=str,   default="cuda:2")
+    parser.add_argument("--device",             type=str,   default="cuda:0")
     parser.add_argument("--seed",               type=int,   default=2)
     parser.add_argument("--batch-size",         type=int,   default=2)
     parser.add_argument("--learning-rate",      type=float, default=1e-3)
@@ -61,7 +61,7 @@ def main(opt):
     euler_steps = opt.euler_steps
     utils.set_seed(opt.seed)  
 
-    wandb.init(entity="20307110428", project="PSWE_DA", name=f"t21d_avg_n_{noise_level}_o_{obs_sigma}_s_{scaling}_rmse", 
+    wandb.init(entity=None, project=None, name=f"t21d_avg_n_{noise_level}_o_{obs_sigma}_s_{scaling}_rmse", 
         dir=str(opt.base_path / opt.model_path) , config=vars(opt), save_code=True)
     
     # data_train, data_valid, data_test = load_data(opt)
@@ -98,12 +98,11 @@ def main(opt):
         kernel_initializer=opt.kernel_initializer,
     )
 
-    encoder = torch.load(opt.base_path / opt.model_path / "lstm_32.ckpt", map_location=opt.device)   
+    encoder = torch.load(opt.base_path / opt.model_path / "lstm.ckpt", map_location=opt.device)   
     encoder.eval()
     model.to(opt.device)
     model = utils.load_model(model, opt.base_path / opt.model_path / "dyn_1799.ckpt",
                        opt.base_path / opt.model_path / "rec_1799.ckpt", opt.device)
-                    #    opt.base_path/"saved_model/150x150_non_const/rec.pth", opt.device)
                     
     from src.normalization import Normalize_gaussian, Normalize
     stat = np.load(opt.base_path / opt.model_path / "mean_std.npz", allow_pickle=True)
@@ -169,26 +168,8 @@ def main(opt):
         rmses_u_orig.append(rmse_u)
         
         print(f"finished {true_traj}th trajectory")
-    
-    # np.savez_compressed(opt.base_path / opt.model_path /f"n_{noise_level}_o_{obs_sigma}_s_{scaling}_seed_{opt.seed}_rmse.npz",
-    #                     rmses_state = rmses_state, rmses_state_orig = rmses_state_orig,
-    #                     rmses_latent = rmses_latent, rmses_latent_orig = rmses_latent_orig,
-    #                     rmses_u = rmses_u, rmses_u_orig = rmses_u_orig)
+
     np.save(opt.base_path / opt.model_path /f"ldensf_results_seed_{opt.seed}_n_{opt.noise_level}.npy", assimilated_states)
-    # np.save(opt.base_path / opt.model_path /f"ldensf_results.npy", assimilated_states)
-    
-    # np.save(opt.base_path / opt.model_path /f"ldensf_results_true.npy", true_state)
-    
-    # wandb.log(
-    #     {"state": wandb.plot.line_series(xs=np.arange(63), 
-    #         ys=[np.mean(rmses_state, axis=0), np.mean(rmses_state_orig, axis=0)], keys=["rmse state", "rmse state orig"], 
-    #         title="State RMSE", xname="time steps", ),
-    #     "latent": wandb.plot.line_series(xs=np.arange(63),
-    #         ys=[np.mean(rmses_latent, axis=0), np.mean(rmses_latent_orig, axis=0)], keys=["rmse latent", "rmse latent orig"],
-    #         title="Latent RMSE", xname="time steps", ),
-    #     "u": wandb.plot.line_series(xs=np.arange(63),
-    #         ys=[np.mean(rmses_u, axis=0), np.mean(rmses_u_orig, axis=0)], keys=["rmse u", "rmse u orig"],
-    #         title="U RMSE", xname="time steps", )})
 
 
 if __name__ == "__main__":

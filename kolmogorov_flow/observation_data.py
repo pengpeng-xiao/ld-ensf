@@ -18,10 +18,10 @@ def create_training_options():
     
     # --------------- path and logging ---------------
     parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
-    parser.add_argument("--data-path",          type=Path,  default="data/data_cplx_Re_500_1500_150x150.npz")
+    parser.add_argument("--data-path",          type=Path,  default="kolmogorov_flow/data/kolmogorov_data.npz")
     parser.add_argument("--log-dir",            type=Path,  default="log")
     parser.add_argument("--name",               type=str,   default="run_data_assimilation",    help="name of the run")
-    parser.add_argument("--model-path",         type=Path,  default="saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_gamma_0.5_resd_14")
+    parser.add_argument("--model-path",         type=Path,  default="kolmogorov_flow/saved_model/ldnet")
     
     # --------------- dataset parameter ---------------
     parser.add_argument("--prop-train",         type=float, default=0.6)
@@ -41,7 +41,7 @@ def create_training_options():
     parser.add_argument("--kernel-initializer", type=str,   default="Glorot normal")
     
     # --------------- training parameter ---------------
-    parser.add_argument("--device",             type=str,   default="cuda:3")
+    parser.add_argument("--device",             type=str,   default="cuda:0")
     parser.add_argument("--seed",               type=int,   default=42)
     parser.add_argument("--batch-size",         type=int,   default=2)
 
@@ -80,7 +80,7 @@ def load_data(opt):
     data_test = prep_data.get_test_data()
     
     from src.normalization import Normalize_gaussian
-    stat = np.load(opt.base_path / "saved_model/cplx_Re500_1500_150x150/mean_std.npz", allow_pickle=True)
+    stat = np.load(opt.base_path / "kolmogorov_flow/saved_model/ldnet/mean_std.npz", allow_pickle=True)
     mean = stat["mean"]
     std = stat["std"]
     normalize_y = Normalize_gaussian(mean, std)
@@ -130,7 +130,8 @@ def main(opt):
     )
 
     model.to(opt.device)
-    torch.load(opt.base_path / "saved_model/cplx_Re500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14/ckpt_1999.pt", map_location=opt.device)
+    model = load_model(model, opt.base_path / "kolmogorov_flow/saved_model/ldnet/dyn_1999.pt",
+                        opt.base_path / "kolmogorov_flow/saved_model/ldnet/rec_1999.pt", opt.device)
 
     for data in [data_train, data_valid, data_test]:
         with torch.no_grad():
@@ -142,8 +143,8 @@ def main(opt):
         "data_valid": data_valid,
         "data_test": data_test,
     }
-    
-    torch.save(data, opt.base_path / "data/data_observation_500_1500_150x150_resnet_fourier_10_freeze_gamma_0.5_resd_14.pth")
+
+    torch.save(data, opt.base_path / "kolmogorov_flow/data/observation_data.pth")
     
 
 if __name__ == "__main__":

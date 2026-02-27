@@ -25,10 +25,10 @@ def create_training_options():
     
     # --------------- path and logging ---------------
     parser.add_argument("--base-path",          type=Path,  default=None, help="base path for data and models")
-    parser.add_argument("--data-path",          type=Path,  default="data_parameter_shuf")
+    parser.add_argument("--data-path",          type=Path,  default="atmospheric_modeling/data_parameter_shuf")
     parser.add_argument("--log-dir",            type=Path,  default="log")
-    parser.add_argument("--name",               type=str,   default="parameter_shuf_t21d",    help="name of the run")
-    parser.add_argument("--model-path",         type=Path,  default="saved_model/parameter_shuf_t21d")
+    parser.add_argument("--name",               type=str,   default="ldnet",    help="name of the run")
+    parser.add_argument("--model-path",         type=Path,  default="atmospheric_modeling/saved_model/ldnet")
     
     # --------------- dataset parameter ---------------
     parser.add_argument("--num-points-train",   type=int,   default=40000,   help="number of spatial points in training set")
@@ -52,7 +52,7 @@ def create_training_options():
     parser.add_argument("--const-u",            action="store_true",  default=False) 
     
     # --------------- training parameter ---------------
-    parser.add_argument("--device",             type=str,   default="cuda:1")
+    parser.add_argument("--device",             type=str,   default="cuda:0")
     parser.add_argument("--seed",               type=int,   default=42)
     parser.add_argument("--batch-size",         type=int,   default=2)
     parser.add_argument("--learning-rate",      type=float, default=1e-3)
@@ -62,95 +62,6 @@ def create_training_options():
 
     opt = parser.parse_args()
     return opt
-
-def parse_parameters_from_name(name):
-    pattern = r"hf0_([0-9p]+)_sigma_([0-9p]+)"
-    match = re.search(pattern, name)
-    if match:
-        hf0_str = match.group(1).replace("p", ".")
-        sigma_str = match.group(2).replace("p", ".")
-        hf0 = float(hf0_str)
-        sigma = float(sigma_str)
-        return hf0, sigma
-    else:
-        raise ValueError(f"Could not parse parameters from name: {name}")
-
-def load_from_hdf5(file_list):
-    dataset = {}
-    h, u, coords, hf0s, sigmas = [], [], [], [], []
-    for fname in tqdm(file_list):
-        with h5py.File(fname, "r") as f: 
-            path = Path(fname)
-            foldername = path.name
-            hf0, sigma = parse_parameters_from_name(foldername)         
-            hf0s.append(hf0)
-            sigmas.append(sigma)  
-            h.append(f["tasks/h"][::2][:63])
-            u.append(f["tasks/u"][::2][:63])
-            phi = f["scales/phi_hash_7b8ec7cabc40ac4b596a5ef833e9eab019f07d46"][:]
-            theta = f["scales/theta_hash_7371cda98b66ed3211b41cdb54c08495aa28ea62"][:]
-            phi_grid, theta_grid = np.meshgrid(phi, theta)
-            # phi_grid = phi_grid.T
-            # theta_grid = theta_grid.T
-            coords.append(np.stack([phi_grid.ravel(), theta_grid.ravel()], axis=-1))
-    h = np.stack(h, axis=0).astype(np.float32)
-    print("==========h.shape==========", h.shape)
-    u = np.stack(u, axis=0).transpose(0,1,3,4,2).astype(np.float32)
-    print("==========u.shape==========", u.shape)
-    dataset["y"] = np.concatenate([h[...,np.newaxis], u], axis=-1).astype(np.float32)
-    print(dataset["y"].shape)
-    # dataset["u"] = dataset["y"][:,1].astype(np.float32)
-    dataset["x"] = np.stack(coords, axis=0).astype(np.float32)
-    print("dataset['x'].shape", dataset["x"].shape)
-    hf0s = np.stack(hf0s, axis=0)
-    sigmas = np.stack(sigmas, axis=0)
-    dataset["u"] = np.stack((hf0s, sigmas), axis=-1).astype(np.float32)
-    print("u shape", dataset["u"].shape)
-    # dataset["x"] = coords
-    return dataset
-
-def load_data(opt):
-    valid_file_list = sorted(glob.glob(str(opt.base_path / opt.data_path / "valid/IC_*/IC_*_s1.h5")))
-    data_valid = load_from_hdf5(valid_file_list)
-    train_file_list = sorted(glob.glob(str(opt.base_path / opt.data_path / "train/IC_*/IC_*_s1.h5")))
-    data_train = load_from_hdf5(train_file_list)
-    test_file_list = sorted(glob.glob(str(opt.base_path / opt.data_path / "test/IC_*/IC_*_s1.h5")))
-    data_test = load_from_hdf5(test_file_list)
-    
-    
-    for dataset in [data_train, data_valid, data_test]:
-        # --------------- select needed time slices and reshape ---------------
-        interval = opt.interval 
-        dataset["y"] = dataset["y"][:, ::1, :, :, :] #! we don't deal with time slice in this version
-        B, T, H, W, C = dataset["y"].shape
-        # new_shape = dataset['y'].shape[:-2] + (-1,)
-        dataset["y"] = dataset["y"].reshape(B, T, H * W, C)
-        # dataset["u"] = np.tile(dataset["u"][:, None, :], (1, dataset["y"].shape[1], 1))
-        # dataset["x"] = np.broadcast_to(dataset["x"][None,None,:,:], (dataset["y"].shape[0], 
-        #             dataset["y"].shape[1], dataset["x"].shape[-2], dataset["x"].shape[-1]))
-        dataset["x"] = np.broadcast_to(dataset["x"][:,None,:,:], (dataset["y"].shape[0], 
-                dataset["y"].shape[1], dataset["x"].shape[-2], dataset["x"].shape[-1]))
-        # ------------------ normalize dataset ------------------
-        # dt_normalize = opt.dt_normalize / interval
-        dataset["dt"] = np.array(opt.dt).astype(np.float32)
-        normlize_x = Normalize([0, 0], [2 * np.pi, np.pi])
-        dataset["x"] = normlize_x.normalize_forw(dataset["x"])
-        if dataset is data_train:
-            mean = np.mean(data_train["y"], axis=tuple(range(data_train["y"].ndim-1)))
-            std = np.std(data_train["y"], axis=tuple(range(data_train["y"].ndim-1)))
-            np.savez(opt.base_path / opt.model_path / "mean_std.npz", mean=mean, std=std)
-            normalize_y = Normalize_gaussian(mean, std)
-        dataset["y"] = normalize_y.normalize_forw(dataset["y"])
-        
-        normalize_u = Normalize([0.1, 1.0], [30.0, 4.0])
-        dataset["u"] = normalize_u.normalize_forw(dataset["u"])
-    
-    # data_train = select_space_subset(data_train, opt.num_points_train)
-    # data_valid = select_space_subset(data_valid, opt.num_points_valid)
-    
-    # np.savez_compressed(opt.base_path / opt.data_path / "data_preprocessed_n40000_t25.npz", data_train=data_train, data_valid=data_valid, data_test=data_test)
-    
-    return data_train, data_valid, data_test
 
 def load_model(model, path_dyn, path_rec, device):
     model.dyn.load_state_dict(torch.load(path_dyn, map_location=device, weights_only=True))
@@ -173,7 +84,10 @@ def main(opt):
     
     utils.set_seed(opt.seed)  
 
-    data_train, data_valid, data_test = load_data(opt)
+    data = np.load(opt.base_path / opt.data_path /"data_normalized.npz", allow_pickle = True)
+    data_train = data["data_train"].item()
+    data_valid = data["data_valid"].item()
+    data_test = data["data_test"].item()
 
     flat_idx = observ_idx(512, 256, 16)
     # flat_idx = np.random.choice(150*150, 100, replace=False)
@@ -206,12 +120,6 @@ def main(opt):
         with torch.no_grad():
             latent_states = model(data, opt.device, latent_state=True)
             data["latent_states"] = latent_states
-
-    # data = {
-    #     "data_train": data_train,
-    #     "data_valid": data_valid,
-    #     "data_test": data_test,
-    # }
     
     data = {
         "data_train": extract_essential(data_train),
@@ -219,7 +127,7 @@ def main(opt):
         "data_test": data_test,
     }
     
-    torch.save(data, opt.base_path / opt.model_path /"observation_16.pth")
+    torch.save(data, opt.base_path / opt.model_path /"observation_data.pth")
     
 
 if __name__ == "__main__":
